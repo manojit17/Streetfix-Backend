@@ -48,6 +48,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve the /uploads folder as static files
 // This lets the frontend load images at: http://localhost:5000/uploads/filename.jpg
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Health check route
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success:     true,
+    message:     "StreetFix API is running! 🚀",
+    environment: process.env.NODE_ENV,
+    timestamp:   new Date().toISOString(),
+  });
+});
 
 // ── API ROUTES ────────────────────────────────────────────────
 
@@ -78,13 +87,18 @@ app.use((req, res) => {
 
 // ── ERROR HANDLER ─────────────────────────────────────────────
 // Must be LAST — catches errors thrown by any route or middleware
-app.use(errorHandler);
-
 // ── START SERVER ──────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, async () => {
   console.log(`StreetFix server running on http://localhost:${PORT}`);
-
-  await open(`http://localhost:${PORT}`);
+  // ONLY open the browser if we are NOT running on Render (production)
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      await open(`http://localhost:${PORT}`);
+    } catch (err) {
+      console.log("Could not open browser automatically:", err.message);
+    }
+  }
 });
+
+ 
