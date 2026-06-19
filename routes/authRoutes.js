@@ -14,6 +14,10 @@ const { register, login } = require('../controllers/authController');
 
 // POST /api/auth/register
 // No middleware needed — this is a public route
-router.post('/register', registerController); //  This makes the URL: /api/auth/register
-router.post('/login', loginController);       //  This makes the URL: /api/auth/login
+router.post('/register', register);
+
+// POST /api/auth/login
+// No middleware needed — this is a public route
+router.post('/login', login);
+
 module.exports = router;
