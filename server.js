@@ -84,9 +84,9 @@ app.use((req, res) => {
     message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
-
 // ── ERROR HANDLER ─────────────────────────────────────────────
 // Must be LAST — catches errors thrown by any route or middleware
+app.use(errorHandler);
 // ── START SERVER ──────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
