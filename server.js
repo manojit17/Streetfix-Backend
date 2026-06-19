@@ -34,7 +34,7 @@ const app = express();
 
 // CORS — allows the React frontend (on a different port/domain) to talk to this API
 const corsOptions = {
-  origin        : '*',          // In production, replace * with your frontend URL
+  origin        : 'https://street-fix-six.vercel.app',          // In production, replace * with your frontend URL
   methods       : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
