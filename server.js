@@ -32,12 +32,22 @@ const app = express();
 
 // ── GLOBAL MIDDLEWARE ─────────────────────────────────────────
 
-// CORS — allows the React frontend (on a different port) to talk to this API
-app.use(cors({
-  origin     : '*',             // In production, replace * with your frontend URL
-  methods    : ['GET', 'POST', 'PUT', 'DELETE'],
+// CORS — allows the React frontend (on a different port/domain) to talk to this API
+const corsOptions = {
+  origin        : '*',          // In production, replace * with your frontend URL
+  methods       : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+app.use(cors(corsOptions));
+
+// FIX: Browsers send an automatic "OPTIONS" request (called a "preflight")
+// before any POST/PUT/DELETE request that includes JSON or an Authorization
+// header. Express needs to explicitly respond to these OPTIONS requests
+// with the correct CORS headers, otherwise the browser blocks the real
+// request entirely — this looks like a CORS error in DevTools even though
+// the server itself is working fine. This line fixes that for every route.
+app.options('*', cors(corsOptions));
 
 // Parse incoming JSON request bodies (e.g. { name, email, password })
 app.use(express.json());
@@ -48,6 +58,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve the /uploads folder as static files
 // This lets the frontend load images at: http://localhost:5000/uploads/filename.jpg
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Health check route
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -84,9 +95,11 @@ app.use((req, res) => {
     message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
+
 // ── ERROR HANDLER ─────────────────────────────────────────────
 // Must be LAST — catches errors thrown by any route or middleware
 app.use(errorHandler);
+
 // ── START SERVER ──────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
@@ -100,5 +113,3 @@ app.listen(PORT, async () => {
     }
   }
 });
-
- 
