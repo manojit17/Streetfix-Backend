@@ -33,13 +33,19 @@ const app = express();
 // ── GLOBAL MIDDLEWARE ─────────────────────────────────────────
 
 // CORS — allows the React frontend (on a different port/domain) to talk to this API
-const corsOptions = {
-  origin        : 'https://street-fix-six.vercel.app',          // In production, replace * with your frontend URL
-  methods       : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+app.use(cors({
+  origin: [
+    'https://street-fix-six.vercel.app',  // your Vercel frontend URL
+    'http://localhost:5173',               // local dev
+    'http://localhost:3000',               // local dev fallback
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-};
+  credentials: true,
+}))
 
-app.use(cors(corsOptions));
+// Handle preflight requests for ALL routes
+app.options('*', cors())
 
 // FIX: Browsers send an automatic "OPTIONS" request (called a "preflight")
 // before any POST/PUT/DELETE request that includes JSON or an Authorization
