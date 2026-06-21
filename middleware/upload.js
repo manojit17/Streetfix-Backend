@@ -2,41 +2,46 @@
 //  middleware/upload.js
 //  PURPOSE : Handle image file uploads using Multer
 //  HOW     : Multer intercepts multipart/form-data requests,
-//            validates the file, and saves it to /uploads folder
+//            validates the file, and uploads it DIRECTLY to
+//            Cloudinary instead of saving to local disk.
+//
+//  CHANGED FROM ORIGINAL:
+//    Before → multer.diskStorage() saved files to a local
+//             "uploads/" folder on the server's filesystem.
+//             This worked locally, but Render wipes that folder
+//             on every redeploy/sleep cycle, deleting all photos.
+//
+//    Now    → CloudinaryStorage uploads the file straight to
+//             Cloudinary's cloud storage during the request.
+//             req.file.path will now contain the full permanent
+//             Cloudinary URL instead of a local filename.
 // ─────────────────────────────────────────────────────────────
 
-const multer = require('multer');
-const path   = require('path');
+const multer               = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary            = require('../config/cloudinary');
 
 // ── STORAGE CONFIG ────────────────────────────────────────────
-// Tells Multer WHERE to save files and WHAT to name them
-const storage = multer.diskStorage({
-
-  // Save all uploaded files into the /uploads folder
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // null = no error
-  },
-
-  // Name each file uniquely: timestamp-originalname
-  // e.g. "1712345678901-pothole.jpg"
-  filename: function (req, file, cb) {
-    const uniqueName = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
-    cb(null, uniqueName);
+// Tells Multer to upload directly to Cloudinary instead of disk
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder         : 'streetfix-reports',       // groups all report photos in one Cloudinary folder
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    // Auto-resize large photos to save storage + bandwidth,
+    // and auto-optimise quality for faster loading
+    transformation : [{ width: 1200, crop: 'limit', quality: 'auto' }],
   },
 });
 
 // ── FILE FILTER ───────────────────────────────────────────────
-// Only allow image files (jpg, jpeg, png, webp)
+// Extra safety check on the file type before upload even starts
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|webp/;
-
-  // Check the file extension
-  const extname  = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  // Check the MIME type (the browser-reported file type)
   const mimetype = allowedTypes.test(file.mimetype);
 
-  if (extname && mimetype) {
-    cb(null, true); // accept the file
+  if (mimetype) {
+    cb(null, true);
   } else {
     cb(new Error('Only image files are allowed (jpg, jpeg, png, webp)'), false);
   }

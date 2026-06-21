@@ -22,9 +22,11 @@ const createReport = async (req, res, next) => {
       throw new Error('Please provide title, description, latitude, and longitude');
     }
 
-    // If an image was uploaded, req.file will contain it
-    // We store only the filename, not the full path
-    const image = req.file ? req.file.filename : null;
+    // CHANGED: with CloudinaryStorage, req.file.path now contains the
+    // FULL permanent Cloudinary URL (e.g. "https://res.cloudinary.com/...")
+    // instead of just a local filename like "1712345-photo.jpg".
+    // We store this full URL directly — no more building a URL later.
+    const image = req.file ? req.file.path : null;
 
     // Create the report in MongoDB
     // req.user._id comes from the auth middleware (protect)
@@ -54,14 +56,10 @@ const createReport = async (req, res, next) => {
 // Supports optional query filters: ?status=Pending&severity=High
 const getAllReports = async (req, res, next) => {
   try {
-    // Build a filter object from query params
-    // e.g. GET /api/reports?status=Pending  →  filter = { status: 'Pending' }
     const filter = {};
     if (req.query.status)   filter.status   = req.query.status;
     if (req.query.severity) filter.severity = req.query.severity;
 
-    // Find reports, newest first (-1 = descending order)
-    // .populate('userId', 'name email') replaces userId with actual user data
     const reports = await Report.find(filter)
       .populate('userId', 'name email')
       .sort({ createdAt: -1 });
@@ -81,7 +79,6 @@ const getAllReports = async (req, res, next) => {
 // Protected — returns only the logged-in user's reports
 const getMyReports = async (req, res, next) => {
   try {
-    // Filter by the logged-in user's ID
     const reports = await Report.find({ userId: req.user._id })
       .sort({ createdAt: -1 });
 
@@ -103,14 +100,12 @@ const updateReportStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
 
-    // Validate the new status value
     const allowedStatuses = ['Pending', 'In Progress', 'Resolved'];
     if (!status || !allowedStatuses.includes(status)) {
       res.statusCode = 400;
       throw new Error(`Status must be one of: ${allowedStatuses.join(', ')}`);
     }
 
-    // Find the report by its ID from the URL param (:id)
     const report = await Report.findById(req.params.id);
 
     if (!report) {
@@ -118,14 +113,11 @@ const updateReportStatus = async (req, res, next) => {
       throw new Error('Report not found');
     }
 
-    // Make sure the logged-in user owns this report
-    // .toString() converts ObjectId to string for comparison
     if (report.userId.toString() !== req.user._id.toString()) {
       res.statusCode = 403;
       throw new Error('Not authorized — you can only update your own reports');
     }
 
-    // Update the status and save
     report.status = status;
     await report.save();
 
