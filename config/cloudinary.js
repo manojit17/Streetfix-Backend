@@ -1,4 +1,4 @@
-────────────────────────────────────────────────────────────
+
 //  config/cloudinary.js
 //  PURPOSE : Configure the Cloudinary SDK using credentials from .env
 //  WHY     : Render's local filesystem gets wiped on every redeploy
