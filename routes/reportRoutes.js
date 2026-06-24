@@ -1,43 +1,32 @@
 // ─────────────────────────────────────────────────────────────
-//  routes/reportRoutes.js
-//  PURPOSE : Define the URL paths for report operations
+//  routes/authRoutes.js
+//  PURPOSE : Define the URL paths for authentication
 //  ROUTES  :
-//    POST /api/reports            → create a report (protected)
-//    GET  /api/reports            → get all reports (public)
-//    GET  /api/reports/my         → get my reports (protected)
-//    PUT  /api/reports/:id/status → update status (protected)
+//    POST /api/auth/register       → create new account
+//    POST /api/auth/login          → login and get JWT token
+//    PUT  /api/auth/profile        → update profile (protected)
+//    PUT  /api/auth/password       → change password (protected)
 // ─────────────────────────────────────────────────────────────
 
 const express = require('express');
 const router  = express.Router();
 
-// Import controller functions
-const { createReport, getAllReports, getMyReports, updateReportStatus, updateReport, deleteReport } = require('../controllers/reportController');
+// Import the controller functions
+const { register, login, updateProfile, changePassword } = require('../controllers/authController');
 
-// Import middleware
-const { protect } = require('../middleware/auth');   // JWT check
-const upload      = require('../middleware/upload'); // image upload
+// Import the protect middleware
+const { protect } = require('../middleware/auth'); // ✅ correct path
 
-// ── PUBLIC ROUTES ─────────────────────────────────────────────
+// POST /api/auth/register — public route
+router.post('/register', register);
 
-// GET /api/reports — get all reports (anyone can see)
-router.get('/', getAllReports);
+// POST /api/auth/login — public route
+router.post('/login', login);
 
-// ── PROTECTED ROUTES (must be logged in) ─────────────────────
+// PUT /api/auth/profile — protected route
+router.put('/profile', protect, updateProfile);
 
-// POST /api/reports — create a new report
-// protect        → checks JWT token first
-// upload.single  → processes one image file named "image"
-router.post('/', protect, upload.single('image'), createReport);
-
-// GET /api/reports/my — get only the logged-in user's reports
-// NOTE: this route must come BEFORE /:id routes to avoid conflicts
-router.get('/my', protect, getMyReports);
-
-// PUT /api/reports/:id/status — update the status of a specific report
-// :id is a URL parameter (e.g. /api/reports/64abc123/status)
-router.put('/:id/status', protect, updateReportStatus);
-router.put('/:id', protect, upload.single('image'), updateReport);
-router.delete('/:id', protect, deleteReport);
+// PUT /api/auth/password — protected route
+router.put('/password', protect, changePassword);
 
 module.exports = router;
