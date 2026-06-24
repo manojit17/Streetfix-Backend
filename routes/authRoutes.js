@@ -10,7 +10,7 @@ const express = require('express');
 const router  = express.Router();
 
 // Import the controller functions
-const { register, login } = require('../controllers/authController');
+const { register, login, updateProfile, changePassword } = require('../controllers/authController');
 
 // POST /api/auth/register
 // No middleware needed — this is a public route
@@ -19,5 +19,7 @@ router.post('/register', register);
 // POST /api/auth/login
 // No middleware needed — this is a public route
 router.post('/login', login);
+router.put('/profile',  protect, updateProfile);
+router.put('/password', protect, changePassword);
 
 module.exports = router;

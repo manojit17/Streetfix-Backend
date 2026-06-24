@@ -12,12 +12,7 @@ const express = require('express');
 const router  = express.Router();
 
 // Import controller functions
-const {
-  createReport,
-  getAllReports,
-  getMyReports,
-  updateReportStatus,
-} = require('../controllers/reportController');
+const { createReport, getAllReports, getMyReports, updateReportStatus, updateReport, deleteReport } = require('../controllers/reportController');
 
 // Import middleware
 const { protect } = require('../middleware/auth');   // JWT check
@@ -42,5 +37,7 @@ router.get('/my', protect, getMyReports);
 // PUT /api/reports/:id/status — update the status of a specific report
 // :id is a URL parameter (e.g. /api/reports/64abc123/status)
 router.put('/:id/status', protect, updateReportStatus);
+router.put('/:id', protect, upload.single('image'), updateReport);
+router.delete('/:id', protect, deleteReport);
 
 module.exports = router;

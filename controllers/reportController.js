@@ -131,9 +131,42 @@ const updateReportStatus = async (req, res, next) => {
   }
 };
 
+// ── UPDATE REPORT ─────────────────────────────
+const updateReport = async (req, res, next) => {
+  try {
+    const report = await Report.findById(req.params.id)
+    if (!report) { res.statusCode = 404; throw new Error('Report not found') }
+    if (report.userId.toString() !== req.user._id.toString()) {
+      res.statusCode = 403; throw new Error('Not authorized')
+    }
+    const { title, description, severity } = req.body
+    if (title)       report.title       = title
+    if (description) report.description = description
+    if (severity)    report.severity    = severity
+    if (req.file)    report.image       = req.file.path
+    await report.save()
+    res.status(200).json({ success:true, message:'Report updated', data:report })
+  } catch (error) { next(error) }
+}
+
+// ── DELETE REPORT ─────────────────────────────
+const deleteReport = async (req, res, next) => {
+  try {
+    const report = await Report.findById(req.params.id)
+    if (!report) { res.statusCode = 404; throw new Error('Report not found') }
+    if (report.userId.toString() !== req.user._id.toString()) {
+      res.statusCode = 403; throw new Error('Not authorized')
+    }
+    await report.deleteOne()
+    res.status(200).json({ success:true, message:'Report deleted' })
+  } catch (error) { next(error) }
+}
+
 module.exports = {
   createReport,
   getAllReports,
   getMyReports,
   updateReportStatus,
+  updateReport,
+  deleteReport,
 };

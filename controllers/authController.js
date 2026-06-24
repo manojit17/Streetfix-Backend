@@ -108,4 +108,44 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login };
+// ── UPDATE PROFILE ─────────────────────────────
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, email } = req.body
+    const user = await User.findById(req.user._id)
+    if (name)  user.name  = name
+    if (email) user.email = email.toLowerCase()
+    await user.save()
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated',
+      user: { id:user._id, name:user.name, email:user.email }
+    })
+  } catch (error) { next(error) }
+}
+
+// ── CHANGE PASSWORD ────────────────────────────
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+    if (!currentPassword || !newPassword) {
+      res.statusCode = 400
+      throw new Error('Please provide current and new password')
+    }
+    if (newPassword.length < 6) {
+      res.statusCode = 400
+      throw new Error('New password must be at least 6 characters')
+    }
+    const user = await User.findById(req.user._id).select('+password')
+    const isMatch = await user.matchPassword(currentPassword)
+    if (!isMatch) {
+      res.statusCode = 401
+      throw new Error('Current password is incorrect')
+    }
+    user.password = newPassword
+    await user.save()
+    res.status(200).json({ success:true, message:'Password changed successfully' })
+  } catch (error) { next(error) }
+}
+
+module.exports = { register, login, updateProfile, changePassword };
