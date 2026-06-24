@@ -19,7 +19,7 @@ router.post('/register', register);
 // POST /api/auth/login
 // No middleware needed — this is a public route
 router.post('/login', login);
-router.put('/profile',  protect, updateProfile);
-router.put('/password', protect, changePassword);
+const { register, login, updateProfile, changePassword } = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware'); // ← ADD THIS
 
 module.exports = router;
