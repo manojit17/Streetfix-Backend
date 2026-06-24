@@ -2,8 +2,10 @@
 //  routes/authRoutes.js
 //  PURPOSE : Define the URL paths for authentication
 //  ROUTES  :
-//    POST /api/auth/register  → create new account
-//    POST /api/auth/login     → login and get JWT token
+//    POST /api/auth/register       → create new account
+//    POST /api/auth/login          → login and get JWT token
+//    PUT  /api/auth/profile        → update profile (protected)
+//    PUT  /api/auth/password       → change password (protected)
 // ─────────────────────────────────────────────────────────────
 
 const express = require('express');
@@ -12,14 +14,19 @@ const router  = express.Router();
 // Import the controller functions
 const { register, login, updateProfile, changePassword } = require('../controllers/authController');
 
-// POST /api/auth/register
-// No middleware needed — this is a public route
+// Import the protect middleware
+const { protect } = require('../middleware/auth'); // ✅ auth.js not authMiddleware.js
+
+// POST /api/auth/register — public route
 router.post('/register', register);
 
-// POST /api/auth/login
-// No middleware needed — this is a public route
+// POST /api/auth/login — public route
 router.post('/login', login);
-const { register, login, updateProfile, changePassword } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware'); // ← ADD THIS
+
+// PUT /api/auth/profile — protected route
+router.put('/profile', protect, updateProfile);
+
+// PUT /api/auth/password — protected route
+router.put('/password', protect, changePassword);
 
 module.exports = router;
