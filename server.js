@@ -1,27 +1,17 @@
 // ─────────────────────────────────────────────────────────────
 //  server.js
 //  PURPOSE : Entry point of the entire backend application
-//  DOES    :
-//    1. Loads environment variables from .env
-//    2. Connects to MongoDB
-//    3. Sets up Express with all middleware
-//    4. Registers all API routes
-//    5. Starts listening on the configured port
 // ─────────────────────────────────────────────────────────────
 
-// Load .env variables FIRST — before anything else
 require('dotenv').config();
 
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
-const open = (...args) =>
-  import("open").then((module) => module.default(...args));
 
-// Import our custom modules
-const connectDB      = require('./config/db');
-const authRoutes     = require('./routes/authRoutes');
-const reportRoutes   = require('./routes/reportRoutes');
+const connectDB        = require('./config/db');
+const authRoutes       = require('./routes/authRoutes');
+const reportRoutes     = require('./routes/reportRoutes');
 const { errorHandler } = require('./middleware/error');
 
 // ── CONNECT TO DATABASE ───────────────────────────────────────
@@ -30,86 +20,67 @@ connectDB();
 // ── CREATE EXPRESS APP ────────────────────────────────────────
 const app = express();
 
-// ── GLOBAL MIDDLEWARE ─────────────────────────────────────────
-
-// CORS — allows the React frontend (on a different port/domain) to talk to this API
+// ── CORS ──────────────────────────────────────────────────────
+// ✅ FIX: origin:'*' does NOT work when Authorization header is sent
+// You MUST list the exact frontend URL instead
 const corsOptions = {
-  origin        : '*',          // In production, replace * with your frontend URL
-  methods       : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: [
+    'https://street-fix-six.vercel.app',   // ✅ your Vercel frontend
+    'http://localhost:5173',                // local dev (Vite)
+    'http://localhost:3000',                // local dev fallback
+  ],
+  methods      : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-};
+  credentials  : true,   // ✅ required when sending Authorization header
+}
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions))
 
-// FIX: Browsers send an automatic "OPTIONS" request (called a "preflight")
-// before any POST/PUT/DELETE request that includes JSON or an Authorization
-// header. Express needs to explicitly respond to these OPTIONS requests
-// with the correct CORS headers, otherwise the browser blocks the real
-// request entirely — this looks like a CORS error in DevTools even though
-// the server itself is working fine. This line fixes that for every route.
-app.options('*', cors(corsOptions));
+// ✅ Handle preflight OPTIONS requests for ALL routes
+// Browsers send this automatically before POST/PUT/DELETE with headers
+app.options('*', cors(corsOptions))
 
-// Parse incoming JSON request bodies (e.g. { name, email, password })
-app.use(express.json());
+// ── BODY PARSERS ──────────────────────────────────────────────
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
-// Parse URL-encoded form data (e.g. from HTML forms)
-app.use(express.urlencoded({ extended: true }));
+// ── STATIC FILES ──────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// Serve the /uploads folder as static files
-// This lets the frontend load images at: http://localhost:5000/uploads/filename.jpg
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Health check route
-app.get("/api/health", (req, res) => {
+// ── HEALTH CHECK ──────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
   res.status(200).json({
-    success:     true,
-    message:     "StreetFix API is running! 🚀",
+    success    : true,
+    message    : 'StreetFix API is running! 🚀',
     environment: process.env.NODE_ENV,
-    timestamp:   new Date().toISOString(),
-  });
-});
+    timestamp  : new Date().toISOString(),
+  })
+})
 
 // ── API ROUTES ────────────────────────────────────────────────
+app.use('/api/auth',    authRoutes)
+app.use('/api/reports', reportRoutes)
 
-// All auth routes:    /api/auth/register  and  /api/auth/login
-app.use('/api/auth', authRoutes);
-
-// All report routes:  /api/reports  and  /api/reports/my  etc.
-app.use('/api/reports', reportRoutes);
-
-// ── HEALTH CHECK ROUTE ────────────────────────────────────────
-// Quick check to confirm the server is running
+// ── ROOT ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: '🛣️ StreetFix API is running',
-    version: '1.0.0',
-  });
-});
+  res.json({ success: true, message: '🛣️ StreetFix API is running', version: '1.0.0' })
+})
 
-// ── 404 HANDLER ───────────────────────────────────────────────
-// Catches any request to a route that doesn't exist
+// ── 404 ───────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.method} ${req.originalUrl}`,
-  });
-});
+  })
+})
 
 // ── ERROR HANDLER ─────────────────────────────────────────────
-// Must be LAST — catches errors thrown by any route or middleware
-app.use(errorHandler);
+app.use(errorHandler)
 
 // ── START SERVER ──────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, async () => {
-  console.log(`StreetFix server running on http://localhost:${PORT}`);
-  // ONLY open the browser if we are NOT running on Render (production)
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      await open(`http://localhost:${PORT}`);
-    } catch (err) {
-      console.log("Could not open browser automatically:", err.message);
-    }
-  }
-});
+const PORT = process.env.PORT || 5000
+
+app.listen(PORT, () => {
+  console.log(`🚀 StreetFix server running on http://localhost:${PORT}`)
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`)
+})
