@@ -17,14 +17,17 @@ const { register, login, updateProfile, changePassword } = require('../controlle
 // Import the protect middleware
 const { protect } = require('../middleware/auth'); // ✅ auth.js not authMiddleware.js
 
+// Import the file upload middleware
+const upload = require('../middleware/upload');
+
 // POST /api/auth/register — public route
 router.post('/register', register);
 
 // POST /api/auth/login — public route
 router.post('/login', login);
 
-// PUT /api/auth/profile — protected route
-router.put('/profile', protect, updateProfile);
+// PUT /api/auth/profile — protected route (uploads avatar image to Cloudinary)
+router.put('/profile', protect, upload.single('avatar'), updateProfile);
 
 // PUT /api/auth/password — protected route
 router.put('/password', protect, changePassword);

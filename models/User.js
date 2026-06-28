@@ -33,11 +33,18 @@ const UserSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select   : false,          // never return password in queries by default
     },
+  
+
+   avatar: {
+      type     : String,
+      default  : null, // ✅ URL to profile image stored on Cloudinary
+    },
   },
   {
-    timestamps: true, // automatically adds createdAt and updatedAt fields
+    timestamps: true,
   }
 );
+
 
 // ── PRE-SAVE HOOK ─────────────────────────────────────────────
 // Runs BEFORE a user document is saved to the database
