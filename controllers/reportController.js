@@ -161,6 +161,37 @@ const deleteReport = async (req, res, next) => {
     res.status(200).json({ success:true, message:'Report deleted' })
   } catch (error) { next(error) }
 }
+// ── TOGGLE SUPPORT (UPVOTE) ─────────────────
+const toggleSupport = async (req, res, next) => {
+  try {
+    const report = await Report.findById(req.params.id)
+    if (!report) { res.statusCode = 404; throw new Error('Report not found') }
+
+    const userId = req.user._id.toString()
+    const alreadySupported = report.supporters.some(
+      id => id.toString() === userId
+    )
+
+    if (alreadySupported) {
+      // Remove support — filter out the current user's ID
+      report.supporters = report.supporters.filter(
+        id => id.toString() !== userId
+      )
+    } else {
+      // Add support
+      report.supporters.push(req.user._id)
+    }
+
+    await report.save()
+
+    res.status(200).json({
+      success: true,
+      message: alreadySupported ? 'Support removed' : 'Support added',
+      supportersCount: report.supporters.length,
+      isSupportedByMe: !alreadySupported,
+    })
+  } catch (error) { next(error) }
+}
 
 module.exports = {
   createReport,
@@ -169,4 +200,5 @@ module.exports = {
   updateReportStatus,
   updateReport,
   deleteReport,
+  toggleSupport,
 };

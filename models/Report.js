@@ -27,6 +27,13 @@ const ReportSchema = new mongoose.Schema(
       type   : String,
       default: null, // image is optional
     },
+    
+    supporters: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }
+],
 
     severity: {
       type    : String,
