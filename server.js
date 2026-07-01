@@ -26,6 +26,7 @@ const app = express();
 const corsOptions = {
   origin: [
     'https://street-fix-six.vercel.app',   // ✅ your Vercel frontend
+    'https://street-fix-manojit-raul-s-projects.vercel.app',   //User frontend
     'http://localhost:5173',                // local dev (Vite)
     'http://localhost:3000',                // local dev fallback
   ],
