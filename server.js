@@ -13,6 +13,7 @@ const connectDB        = require('./config/db');
 const authRoutes       = require('./routes/authRoutes');
 const reportRoutes     = require('./routes/reportRoutes');
 const { errorHandler } = require('./middleware/error');
+const commentRoutes = require('./routes/commentRoutes')
 
 // ── CONNECT TO DATABASE ───────────────────────────────────────
 connectDB();
@@ -61,6 +62,7 @@ app.get('/api/health', (req, res) => {
 // ── API ROUTES ────────────────────────────────────────────────
 app.use('/api/auth',    authRoutes)
 app.use('/api/reports', reportRoutes)
+app.use('/api/comments', commentRoutes)
 
 // ── ROOT ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {
