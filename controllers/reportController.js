@@ -192,7 +192,93 @@ const toggleSupport = async (req, res, next) => {
     })
   } catch (error) { next(error) }
 }
+// ── DISTANCE HELPER (Haversine, meters) ──────────────────────
+function getDistanceInMeters(lat1, lng1, lat2, lng2) {
+  const R     = 6371000
+  const toRad = (d) => d * (Math.PI / 180)
+  const dLat  = toRad(lat2 - lat1)
+  const dLng  = toRad(lng2 - lng1)
+  const a     = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
 
+// ── VERIFY REPORT ─────────────────────────────────────────────
+// POST /api/reports/:id/verify
+// Protected — user must be within 500m, can't verify own report,
+// can only verify once. Photo optional.
+// Body: { type: 'confirm' | 'resolved', latitude, longitude }
+// File: photo (optional, multipart/form-data)
+const verifyReport = async (req, res, next) => {
+  try {
+    const { type, latitude, longitude } = req.body
+
+    const allowedTypes = ['confirm', 'resolved']
+    if (!allowedTypes.includes(type)) {
+      res.statusCode = 400
+      throw new Error(`Type must be one of: ${allowedTypes.join(', ')}`)
+    }
+
+    if (!latitude || !longitude) {
+      res.statusCode = 400
+      throw new Error('Please provide your current latitude and longitude')
+    }
+
+    const report = await Report.findById(req.params.id)
+    if (!report) { res.statusCode = 404; throw new Error('Report not found') }
+
+    // Can't verify your own report
+    if (report.userId.toString() === req.user._id.toString()) {
+      res.statusCode = 403
+      throw new Error('You cannot verify your own report')
+    }
+
+    // Must be within 500m
+    const distance = getDistanceInMeters(
+      parseFloat(latitude), parseFloat(longitude),
+      report.latitude, report.longitude
+    )
+    if (distance > 500) {
+      res.statusCode = 403
+      throw new Error(`You must be within 500m to verify (you're ${Math.round(distance)}m away)`)
+    }
+
+    // Can only verify once
+    const userId = req.user._id.toString()
+    const alreadyVerified = report.verifications.some(v => v.userId.toString() === userId)
+    if (alreadyVerified) {
+      res.statusCode = 400
+      throw new Error('You have already verified this report')
+    }
+
+    const photo = req.file ? req.file.path : null
+
+    report.verifications.push({
+      userId  : req.user._id,
+      type,
+      photo,
+      distance: Math.round(distance),
+    })
+
+    // Recalculate status from verification counts
+    const confirmCount  = report.verifications.filter(v => v.type === 'confirm').length
+    const resolvedCount = report.verifications.filter(v => v.type === 'resolved').length
+
+    if (resolvedCount >= 2) {
+      report.status = 'Resolved'
+    } else if (confirmCount >= 3 && report.status === 'Pending') {
+      report.status = 'Verified'
+    }
+
+    await report.save()
+
+    res.status(200).json({
+      success: true,
+      message: type === 'confirm' ? 'Report verified' : 'Marked as resolved',
+      data   : report,
+    })
+  } catch (error) { next(error) }
+}
 module.exports = {
   createReport,
   getAllReports,
@@ -201,4 +287,5 @@ module.exports = {
   updateReport,
   deleteReport,
   toggleSupport,
+  verifyReport,
 };

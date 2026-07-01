@@ -14,6 +14,7 @@ const {
   updateReport,
   deleteReport,
   toggleSupport,
+  verifyReport,
 } = require('../controllers/reportController');
 
 const { protect } = require('../middleware/auth');
@@ -29,4 +30,5 @@ router.put('/:id/status', protect, updateReportStatus);
 router.put('/:id',        protect, upload.single('image'), updateReport);
 router.delete('/:id',     protect, deleteReport);
 router.put('/:id/support', protect, toggleSupport);
+router.post('/:id/verify', protect, upload.single('photo'), verifyReport);
 module.exports = router;

@@ -58,6 +58,36 @@ const ReportSchema = new mongoose.Schema(
       enum    : ['Pending', 'In Progress', 'Resolved'],
       default : 'Pending',
     },
+    // Add 'Verified' to the status enum
+status: {
+  type    : String,
+  enum    : ['Pending', 'Verified', 'In Progress', 'Resolved'],
+  default : 'Pending',
+},
+
+// Add this new field (goes anywhere after `supporters`)
+verifications: [
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref : 'User',
+    },
+    type: {
+      type    : String,
+      enum    : ['confirm', 'resolved'], // "still a problem" vs "already fixed"
+      required: true,
+    },
+    photo: {
+      type   : String, // Cloudinary URL, optional
+      default: null,
+    },
+    distance: Number, // meters from report, captured at verify time
+    createdAt: {
+      type   : Date,
+      default: Date.now,
+    },
+  },
+],
 
     // References which User created this report
     // mongoose.Schema.Types.ObjectId is the type MongoDB uses for IDs
