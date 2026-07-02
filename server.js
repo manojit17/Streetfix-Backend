@@ -8,12 +8,21 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const fs      = require('fs');
 
-const connectDB        = require('./config/db');
-const authRoutes       = require('./routes/authRoutes');
-const reportRoutes     = require('./routes/reportRoutes');
-const { errorHandler } = require('./middleware/error');
-const commentRoutes = require('./routes/commentRoutes')
+const connectDB              = require('./config/db');
+const authRoutes             = require('./routes/authRoutes');
+const reportRoutes           = require('./routes/reportRoutes');
+const commentRoutes          = require('./routes/commentRoutes');
+const verificationRoutes     = require('./routes/verificationRoutes');
+const { errorHandler }       = require('./middleware/error');
+
+// ── ENSURE UPLOADS FOLDER EXISTS ─────────────────────────────
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('✅ Created uploads directory');
+}
 
 // ── CONNECT TO DATABASE ───────────────────────────────────────
 connectDB();
@@ -22,24 +31,19 @@ connectDB();
 const app = express();
 
 // ── CORS ──────────────────────────────────────────────────────
-// ✅ FIX: origin:'*' does NOT work when Authorization header is sent
-// You MUST list the exact frontend URL instead
 const corsOptions = {
   origin: [
-    'https://street-fix-six.vercel.app',   // ✅ your Vercel frontend
-    'https://street-fix-manojit-raul-s-projects.vercel.app',   //User frontend
-    'http://localhost:5173',                // local dev (Vite)
-    'http://localhost:3000',                // local dev fallback
+    'https://street-fix-six.vercel.app',
+    'https://street-fix-manojit-raul-s-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
   ],
   methods      : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials  : true,   // ✅ required when sending Authorization header
+  credentials  : true,
 }
 
 app.use(cors(corsOptions))
-
-// ✅ Handle preflight OPTIONS requests for ALL routes
-// Browsers send this automatically before POST/PUT/DELETE with headers
 app.options('*', cors(corsOptions))
 
 // ── BODY PARSERS ──────────────────────────────────────────────
@@ -47,7 +51,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // ── STATIC FILES ──────────────────────────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+app.use('/uploads', express.static(uploadsDir))
 
 // ── HEALTH CHECK ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -60,9 +64,10 @@ app.get('/api/health', (req, res) => {
 })
 
 // ── API ROUTES ────────────────────────────────────────────────
-app.use('/api/auth',    authRoutes)
-app.use('/api/reports', reportRoutes)
-app.use('/api/comments', commentRoutes)
+app.use('/api/auth',          authRoutes)
+app.use('/api/reports',       reportRoutes)
+app.use('/api/comments',      commentRoutes)
+app.use('/api/verifications', verificationRoutes)   // ← Phase 3 added
 
 // ── ROOT ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {
