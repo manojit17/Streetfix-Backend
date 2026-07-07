@@ -16,6 +16,7 @@ const reportRoutes           = require('./routes/reportRoutes');
 const commentRoutes          = require('./routes/commentRoutes');
 const verificationRoutes     = require('./routes/verificationRoutes');
 const { errorHandler }       = require('./middleware/error');
+const notificationRoutes     = require('./routes/notificationRoutes')
 
 // ── ENSURE UPLOADS FOLDER EXISTS ─────────────────────────────
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -67,7 +68,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth',          authRoutes)
 app.use('/api/reports',       reportRoutes)
 app.use('/api/comments',      commentRoutes)
-app.use('/api/verifications', verificationRoutes)   // ← Phase 3 added
+app.use('/api/verifications', verificationRoutes)
+app.use('/api/notifications', notificationRoutes)
 
 // ── ROOT ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {

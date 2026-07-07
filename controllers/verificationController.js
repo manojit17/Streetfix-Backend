@@ -60,6 +60,18 @@ const verifyReport = async (req, res, next) => {
       latitude : parseFloat(latitude),
       longitude: parseFloat(longitude),
     })
+const Notification = require('../models/Notification')
+
+// Inside verifyReport, after Verification.create():
+await Notification.create({
+  userId     : report.userId,
+  type       : 'verification',
+  message    : type === 'confirm'
+    ? `${req.user.name} confirmed your report "${report.title}" is still an issue`
+    : `${req.user.name} says your report "${report.title}" has been fixed! 🎉`,
+  reportId   : report._id,
+  triggeredBy: req.user._id,
+})
 
     // If enough people say it's resolved, auto-update report status
     if (type === 'resolved') {

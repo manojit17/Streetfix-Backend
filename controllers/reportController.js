@@ -120,6 +120,22 @@ const updateReportStatus = async (req, res, next) => {
 
     report.status = status;
     await report.save();
+const Notification = require('../models/Notification')
+
+// Inside toggleSupport, after report.save():
+if (!alreadySupported) {
+  // Only notify when ADDING support, not removing it
+  // Don't notify if you support your own report
+  if (report.userId.toString() !== req.user._id.toString()) {
+    await Notification.create({
+      userId     : report.userId,
+      type       : 'support',
+      message    : `${req.user.name} supported your report "${report.title}"`,
+      reportId   : report._id,
+      triggeredBy: req.user._id,
+    })
+  }
+}
 
     res.status(200).json({
       success: true,
@@ -145,6 +161,13 @@ const updateReport = async (req, res, next) => {
     if (severity)    report.severity    = severity
     if (req.file)    report.image       = req.file.path
     await report.save()
+    await Notification.create({
+  userId     : report.userId,
+  type       : 'status_change',
+  message    : `Your report "${report.title}" status changed to "${status}"`,
+  reportId   : report._id,
+  triggeredBy: req.user._id,
+})
     res.status(200).json({ success:true, message:'Report updated', data:report })
   } catch (error) { next(error) }
 }
