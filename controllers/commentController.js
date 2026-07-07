@@ -1,5 +1,6 @@
-const Comment = require('../models/Comment')
-const Report  = require('../models/Report')
+const Comment       = require('../models/Comment')
+const Report        = require('../models/Report')
+const Notification  = require('../models/Notification')
 
 // GET /api/comments/:reportId — get all comments for a report
 const getComments = async (req, res, next) => {
@@ -19,19 +20,6 @@ const addComment = async (req, res, next) => {
       res.statusCode = 400
       throw new Error('Comment text is required')
     }
-const Notification = require('../models/Notification')
-
-// Inside addComment, after comment is created:
-// Don't notify if you comment on your own report
-if (report.userId.toString() !== req.user._id.toString()) {
-  await Notification.create({
-    userId     : report.userId,
-    type       : 'comment',
-    message    : `${req.user.name} commented on your report "${report.title}"`,
-    reportId   : report._id,
-    triggeredBy: req.user._id,
-  })
-}
 
     // Make sure the report actually exists
     const report = await Report.findById(req.params.reportId)
@@ -48,6 +36,17 @@ if (report.userId.toString() !== req.user._id.toString()) {
 
     // Return with user name populated so frontend can display it immediately
     const populated = await comment.populate('userId', 'name')
+
+    // Notify the report owner — but don't notify if you comment on your own report
+    if (report.userId.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        userId     : report.userId,
+        type       : 'comment',
+        message    : `${req.user.name} commented on your report "${report.title}"`,
+        reportId   : report._id,
+        triggeredBy: req.user._id,
+      })
+    }
 
     res.status(201).json({ success: true, data: populated })
   } catch (error) { next(error) }
