@@ -37,6 +37,7 @@ const register = async (req, res, next) => {
         name  : user.name,
         email : user.email,
         avatar: user.avatar || null, // ✅ return avatar
+        role  : user.role,
       },
     });
   } catch (error) {
@@ -78,6 +79,7 @@ const login = async (req, res, next) => {
         name  : user.name,
         email : user.email,
         avatar: user.avatar || null, // ✅ return avatar
+        role  : user.role,
       },
     });
   } catch (error) {
@@ -108,7 +110,8 @@ const updateProfile = async (req, res, next) => {
         id    : user._id, 
         name  : user.name, 
         email : user.email,
-        avatar: user.avatar // ✅ return updated avatar URL
+        avatar: user.avatar, // ✅ return updated avatar URL
+        role  : user.role,
       }
     });
   } catch (error) { 
