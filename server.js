@@ -17,6 +17,7 @@ const commentRoutes          = require('./routes/commentRoutes');
 const verificationRoutes     = require('./routes/verificationRoutes');
 const { errorHandler }       = require('./middleware/error');
 const notificationRoutes     = require('./routes/notificationRoutes')
+const adminRoutes            = require('./routes/adminRoutes')
 
 // ── ENSURE UPLOADS FOLDER EXISTS ─────────────────────────────
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -70,6 +71,7 @@ app.use('/api/reports',       reportRoutes)
 app.use('/api/comments',      commentRoutes)
 app.use('/api/verifications', verificationRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/admin',         adminRoutes)
 
 // ── ROOT ──────────────────────────────────────────────────────
 app.get('/', (req, res) => {

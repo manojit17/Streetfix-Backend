@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────
 //  models/Report.js
 //  PURPOSE : Define the shape of a Report document in MongoDB
-//  FIELDS  : title, description, image, severity,
-//            latitude, longitude, status, userId, createdAt
+//  FIELDS  : title, description, image, supporters, severity,
+//            latitude, longitude, status, verifications,
+//            resolvedBy, resolvedAt, userId, createdAt
 // ─────────────────────────────────────────────────────────────
 
 const mongoose = require('mongoose');
@@ -22,26 +23,24 @@ const ReportSchema = new mongoose.Schema(
       maxlength: [500, 'Description cannot be more than 500 characters'],
     },
 
-    // Stores the filename of the uploaded image (e.g. "1712345678-photo.jpg")
     image: {
       type   : String,
-      default: null, // image is optional
+      default: null,
     },
-    
+
     supporters: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }
-],
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref : 'User',
+      },
+    ],
 
     severity: {
       type    : String,
-      enum    : ['Low', 'Medium', 'High', 'Critical'], // only these 4 values allowed
+      enum    : ['Low', 'Medium', 'High', 'Critical'],
       default : 'Medium',
     },
 
-    // GPS coordinates — used to show the issue on a map
     latitude: {
       type    : Number,
       required: [true, 'Please provide latitude'],
@@ -52,53 +51,54 @@ const ReportSchema = new mongoose.Schema(
       required: [true, 'Please provide longitude'],
     },
 
-    // Tracks where the issue is in the fixing process
     status: {
       type    : String,
-      enum    : ['Pending', 'In Progress', 'Resolved'],
+      enum    : ['Pending', 'Verified', 'In Progress', 'Resolved'],
       default : 'Pending',
     },
-    // Add 'Verified' to the status enum
-status: {
-  type    : String,
-  enum    : ['Pending', 'Verified', 'In Progress', 'Resolved'],
-  default : 'Pending',
-},
 
-// Add this new field (goes anywhere after `supporters`)
-verifications: [
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref : 'User',
-    },
-    type: {
-      type    : String,
-      enum    : ['confirm', 'resolved'], // "still a problem" vs "already fixed"
-      required: true,
-    },
-    photo: {
-      type   : String, // Cloudinary URL, optional
+    verifications: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref : 'User',
+        },
+        type: {
+          type    : String,
+          enum    : ['confirm', 'resolved'],
+          required: true,
+        },
+        photo: {
+          type   : String,
+          default: null,
+        },
+        distance: Number,
+        createdAt: {
+          type   : Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    resolvedBy: {
+      type   : mongoose.Schema.Types.ObjectId,
+      ref    : 'User',
       default: null,
     },
-    distance: Number, // meters from report, captured at verify time
-    createdAt: {
-      type   : Date,
-      default: Date.now,
-    },
-  },
-],
 
-    // References which User created this report
-    // mongoose.Schema.Types.ObjectId is the type MongoDB uses for IDs
+    resolvedAt: {
+      type   : Date,
+      default: null,
+    },
+
     userId: {
       type    : mongoose.Schema.Types.ObjectId,
-      ref     : 'User',          // tells Mongoose this links to the User model
+      ref     : 'User',
       required: true,
     },
   },
   {
-    timestamps: true, // adds createdAt + updatedAt automatically
+    timestamps: true,
   }
 );
 
